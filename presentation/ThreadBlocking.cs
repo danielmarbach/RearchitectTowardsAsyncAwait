@@ -7,7 +7,7 @@ using NUnit.Framework;
 namespace RearchitectTowardsAsyncAwait
 {
     [TestFixture]
-    public class AsyncScript
+    public class ThreadBlocking
     {
         [Test]
         public async Task Locks()
