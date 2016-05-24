@@ -20,18 +20,22 @@ namespace RearchitectTowardsAsyncAwait
     [TestFixture]
     public class SqlConnectionAsync
     {
-        [Test]
-        public async Task Demonstrate()
-        {
-            const string connectionString = @"Data Source=.\SQLEXPRESS;Database=TestDatabase;Integrated Security=true";
-            const string queueName = "TestQueue";
-            const int numberOfMessages = 100;
+        const string connectionString = @"Data Source=.\SQLEXPRESS;Database=TestDatabase;Integrated Security=true";
+        const string queueName = "TestQueue";
+        const int numberOfMessages = 1000;
 
+        [Test]
+        public void Seed()
+        {
             "Creating queue".Output();
             QueueHelper.CreateQueue(connectionString, queueName);
             "Filling queue".Output();
             QueueHelper.FillQueue(connectionString, queueName, numberOfMessages);
+        }
 
+        [Test]
+        public async Task Demonstrate()
+        {
             "Kicking it".Output();
             var receives = new ConcurrentDictionary<Task, Task>();
             var stopwatch = Stopwatch.StartNew();
@@ -70,9 +74,6 @@ namespace RearchitectTowardsAsyncAwait
             {
                 await connection.OpenAsync().ConfigureAwait(false);
 
-                var promotableSinglePhaseNotification = new Enlistment();
-                Transaction.Current.EnlistDurable(Guid.NewGuid(), promotableSinglePhaseNotification, EnlistmentOptions.EnlistDuringPrepareRequired);
-
                 using (var command = new SqlCommand(string.Format(@"WITH message AS (SELECT TOP(1) * FROM [{0}].[{1}] WITH (UPDLOCK, READPAST, ROWLOCK) ORDER BY [RowVersion])
 			DELETE FROM message
 			OUTPUT deleted.Id, deleted.CorrelationId, deleted.ReplyToAddress,
@@ -98,48 +99,6 @@ namespace RearchitectTowardsAsyncAwait
 
                 tx.Complete();
             }
-        }
-    }
-
-    class Enlistment : IPromotableSinglePhaseNotification, ISinglePhaseNotification
-    {
-        public byte[] Promote()
-        {
-            return new byte[] {1, 2, 3};
-        }
-
-        public void Initialize()
-        {
-        }
-
-        public void SinglePhaseCommit(SinglePhaseEnlistment singlePhaseEnlistment)
-        {
-            singlePhaseEnlistment.Committed();
-        }
-
-        public void Rollback(SinglePhaseEnlistment singlePhaseEnlistment)
-        {
-           singlePhaseEnlistment.Aborted();
-        }
-
-        public void Prepare(PreparingEnlistment preparingEnlistment)
-        {
-            preparingEnlistment.Prepared();
-        }
-
-        public void Commit(System.Transactions.Enlistment enlistment)
-        {
-            enlistment.Done();
-        }
-
-        public void Rollback(System.Transactions.Enlistment enlistment)
-        {
-            enlistment.Done();
-        }
-
-        public void InDoubt(System.Transactions.Enlistment enlistment)
-        {
-           enlistment.Done();
         }
     }
 
@@ -206,21 +165,16 @@ namespace RearchitectTowardsAsyncAwait
             {
                 connection.Open();
 
-                using (var transaction = connection.BeginTransaction())
+                for (var i = 0; i < numberOfMessages; i++)
                 {
-                    for (var i = 0; i < numberOfMessages; i++)
+                    using (var command = new SqlCommand(string.Format(SendText, "dbo", queueName), connection))
                     {
-                        using (var command = new SqlCommand(string.Format(SendText, "dbo", queueName), connection, transaction))
-                        {
-                            var body = new byte[4096];
-                            random.NextBytes(body);
-                            MessageRow row = MessageRow.From(new Dictionary<string, string>(), body);
-                            row.PrepareSendCommand(command);
-                            command.ExecuteNonQuery();
-                        }
+                        var body = new byte[4096];
+                        random.NextBytes(body);
+                        MessageRow row = MessageRow.From(new Dictionary<string, string>(), body);
+                        row.PrepareSendCommand(command);
+                        command.ExecuteNonQuery();
                     }
-
-                    transaction.Commit();
                 }
             }
         }
