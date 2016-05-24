@@ -83,5 +83,27 @@ namespace RearchitectTowardsAsyncAwait
         {
             return MyAsyncEvent(this, EventArgs.Empty);
         }
+
+        [Test]
+        public async Task SemaphoreUsage()
+        {
+            var semaphore = new Semaphore(1, 1);
+
+            var tasks = new Task[3];
+            for (int i = 0; i < 3; i++)
+            {
+                var i1 = i;
+                tasks[i] = Task.Run(() =>
+                {
+                    $"{ i1 } Entering wait".Output();
+                    semaphore.WaitOne();
+                    Thread.Sleep(1000);
+                    $"{ i1 } Continue".Output();
+                    semaphore.Release();
+                });
+            }
+
+            await Task.WhenAll(tasks);
+        }
     }
 }
