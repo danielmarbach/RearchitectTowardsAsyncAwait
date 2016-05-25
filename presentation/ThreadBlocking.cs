@@ -57,38 +57,6 @@ namespace RearchitectTowardsAsyncAwait
         }
 
         [Test]
-        public async Task AsyncEvent()
-        {
-            MyAsyncEvent += MyAsyncEventHandler;
-
-            try
-            {
-                await OnMyAsyncEvent();
-            }
-            catch (InvalidOperationException ex)
-            {
-                Console.WriteLine($"Caught: { ex.Message } ");
-            }
-        }
-
-        event AsyncEventHandler MyAsyncEvent = delegate { return Task.CompletedTask; };
-
-        public delegate Task AsyncEventHandler(object sender, EventArgs e);
-
-        async Task MyAsyncEventHandler(object sender, EventArgs e)
-        {
-            Console.WriteLine("Inside MyAsyncEventHandler");
-            await Task.Yield();
-            Console.WriteLine("About to throw inside MyAsyncEventHandler");
-            throw new InvalidOperationException();
-        }
-
-        protected virtual Task OnMyAsyncEvent()
-        {
-            return MyAsyncEvent(this, EventArgs.Empty);
-        }
-
-        [Test]
         public async Task ManualResetEventUsage()
         {
             var syncEvent = new ManualResetEvent(false);
@@ -158,12 +126,12 @@ namespace RearchitectTowardsAsyncAwait
             {
                 ambientState.Value++;
 
-                Console.WriteLine($"Thread: { Thread.CurrentThread.ManagedThreadId }, Value: { ambientState.Value }");
+                $"Thread: { Thread.CurrentThread.ManagedThreadId }, Value: { ambientState.Value }".Output();
             }
         }
 
         [Test]
-        public void OutParameterusage()
+        public void OutParameterUsage()
         {
             string fileName;
             IoBoundMethodWithOutParameter("42", out fileName);
