@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using AsyncDolls;
@@ -157,5 +158,33 @@ namespace RearchitectTowardsAsyncAwait
                 Console.WriteLine($"Thread: { Thread.CurrentThread.ManagedThreadId }, Value: { ambientState.Value }");
             }
         }
+
+        [Test]
+        public void OutParameterusage()
+        {
+            string fileName;
+            IoBoundMethodWithOutParameter("42", out fileName);
+            fileName.Output();
+        }
+
+        static void IoBoundMethodWithOutParameter(string content, out string parameter)
+        {
+            var randomFileName = Path.GetTempFileName();
+            using (var writer = new StreamWriter(randomFileName))
+            {
+                writer.Write(content);
+            }
+            parameter = randomFileName;
+        }
+
+        //static async Task IoBoundMethodWithOutParameter(string content, out string parameter)
+        //{
+        //    var randomFileName = Path.GetTempFileName();
+        //    using (var writer = new StreamWriter(randomFileName))
+        //    {
+        //        await writer.WriteLineAsync(content);
+        //    }
+        //    parameter = randomFileName;
+        //}
     }
 }
