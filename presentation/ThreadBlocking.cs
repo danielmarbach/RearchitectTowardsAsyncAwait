@@ -1,5 +1,8 @@
 using System;
 using System.IO;
+using System.Runtime.Remoting;
+using System.Runtime.Remoting.Messaging;
+using System.Security.Permissions;
 using System.Threading;
 using System.Threading.Tasks;
 using AsyncDolls;
@@ -186,5 +189,60 @@ namespace RearchitectTowardsAsyncAwait
         //    }
         //    parameter = randomFileName;
         //}
+
+        [Test]
+        public async Task RemotingUsage() // Not doing real remoting but you get the point
+        {
+            SyncClient syncClientApp = new SyncClient();
+            syncClientApp.Run();
+
+            AsyncClient asyncClient = new AsyncClient();
+            await asyncClient.Run();
+        }
+
+        public class RemoteService : MarshalByRefObject
+        {
+            public string TimeConsumingRemoteCall()
+            {
+                Thread.Sleep(1000);
+                return "Hello from remote.";
+            }
+        }
+
+        public class SyncClient : MarshalByRefObject
+        {
+            delegate string RemoteSyncDelegate();
+
+            public void Run()
+            {
+                RemoteService remoteService = new RemoteService();
+
+                RemoteSyncDelegate remoteCall = remoteService.TimeConsumingRemoteCall;
+
+                remoteCall().Output();
+            }
+        }
+
+        public class AsyncClient : MarshalByRefObject
+        {
+            delegate string RemoteAsyncDelegate();
+
+            [OneWay]
+            public string OurRemoteAsyncCallBack(IAsyncResult ar)
+            {
+                RemoteAsyncDelegate del = (RemoteAsyncDelegate)((AsyncResult)ar).AsyncDelegate;
+                return del.EndInvoke(ar);
+            }
+
+            public async Task Run()
+            {
+                RemoteService remoteService = new RemoteService();
+
+                RemoteAsyncDelegate remoteCall = remoteService.TimeConsumingRemoteCall;
+
+                var result = await Task.Factory.FromAsync(remoteCall.BeginInvoke, OurRemoteAsyncCallBack, null);
+                result.Output();
+            }
+        }
     }
 }
