@@ -85,6 +85,27 @@ namespace RearchitectTowardsAsyncAwait
         }
 
         [Test]
+        public async Task ManualResetEventUsage()
+        {
+            var syncEvent = new ManualResetEvent(false);
+
+            var t1 = Task.Run(() =>
+            {
+                "Entering wait".Output();
+                syncEvent.WaitOne();
+                "Continue".Output();
+            });
+
+            var t2 = Task.Run(() =>
+            {
+                Thread.Sleep(2000);
+                syncEvent.Set();
+            });
+
+            await Task.WhenAll(t1, t2);
+        }
+
+        [Test]
         public async Task SemaphoreUsage()
         {
             var semaphore = new Semaphore(1, 1);
@@ -104,6 +125,37 @@ namespace RearchitectTowardsAsyncAwait
             }
 
             await Task.WhenAll(tasks);
+        }
+
+        [Test]
+        public async Task AmbientState()
+        {
+            var classWithAmbientState = new ClassWithAmbientState();
+
+            var tasks = new Task[3];
+            for (int i = 0; i < 3; i++)
+            {
+                tasks[i] = Task.Run(() =>
+                {
+                    classWithAmbientState.Do();
+                    Thread.Sleep(200);
+                    classWithAmbientState.Do();
+                });
+            }
+
+            await Task.WhenAll(tasks);
+        }
+
+        class ClassWithAmbientState
+        {
+            static ThreadLocal<int> ambientState = new ThreadLocal<int>(() => 1); // newer version of [ThreadStatic]
+
+            public void Do()
+            {
+                ambientState.Value++;
+
+                Console.WriteLine($"Thread: { Thread.CurrentThread.ManagedThreadId }, Value: { ambientState.Value }");
+            }
         }
     }
 }
