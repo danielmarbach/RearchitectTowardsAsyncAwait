@@ -418,6 +418,39 @@ namespace RearchitectTowardsAsyncAwait
         }
 
         [Test]
+        public async Task AmbientFloatingStateReturned()
+        {
+            var classWithAmbientFloatingState = new ClassWithAmbientFloatingStateReturned();
+
+            var tasks = new Task[3];
+            for (int i = 0; i < 3; i++)
+            {
+                tasks[i] = ((Func<Task>)(async () =>
+                {
+                    int current = 1;
+                    current = classWithAmbientFloatingState.Do(current);
+                    await Task.Delay(200).ConfigureAwait(false);
+                    classWithAmbientFloatingState.Do(current);
+                }))();
+            }
+
+            await Task.WhenAll(tasks);
+        }
+
+
+        class ClassWithAmbientFloatingStateReturned
+        {
+            public int Do(int current)
+            {
+                current++;
+
+                $"Thread: { Thread.CurrentThread.ManagedThreadId }, Value: { current }".Output();
+
+                return current;
+            }
+        }
+
+        [Test]
         public async Task OutParameterUsage()
         {
             string fileName = await IoBoundMethodWithOutParameter("42");
