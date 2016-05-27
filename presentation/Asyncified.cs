@@ -1,4 +1,6 @@
 using System;
+using System.IO;
+using System.Runtime.Remoting.Messaging;
 using System.Threading;
 using System.Threading.Tasks;
 using AsyncDolls;
@@ -329,6 +331,92 @@ namespace RearchitectTowardsAsyncAwait
                 ambientState.Value++;
 
                 $"Thread: { Thread.CurrentThread.ManagedThreadId }, Value: { ambientState.Value }".Output();
+            }
+        }
+
+        [Test]
+        public async Task AmbientFloatingState()
+        {
+            var classWithAmbientFloatingState = new ClassWithAmbientFloatingState();
+
+            var tasks = new Task[3];
+            for (int i = 0; i < 3; i++)
+            {
+                tasks[i] = ((Func<Task>)(async () =>
+                {
+                    var state = new State();
+                    classWithAmbientFloatingState.Do(state);
+                    await Task.Delay(200).ConfigureAwait(false);
+                    classWithAmbientFloatingState.Do(state);
+                }))();
+            }
+
+            await Task.WhenAll(tasks);
+        }
+
+        class ClassWithAmbientFloatingState
+        {
+            public void Do(State state)
+            {
+                state.Value++;
+
+                $"Thread: { Thread.CurrentThread.ManagedThreadId }, Value: { state.Value }".Output();
+            }
+        }
+
+        class State
+        {
+            public State()
+            {
+                Value = 1;
+            }
+
+            public int Value { get; set; }
+        }
+
+        [Test]
+        public async Task OutParameterUsage()
+        {
+            string fileName = await IoBoundMethodWithOutParameter("42");
+            fileName.Output();
+        }
+
+        static async Task<string> IoBoundMethodWithOutParameter(string content)
+        {
+            var randomFileName = Path.GetTempFileName();
+            using (var writer = new StreamWriter(randomFileName))
+            {
+                await writer.WriteLineAsync(content);
+            }
+            return randomFileName;
+        }
+
+        [Test]
+        public async Task RemotingUsage() // Not doing real remoting but you get the point
+        {
+            AsyncClient asyncClient = new AsyncClient();
+            await asyncClient.Run();
+        }
+
+        public class AsyncClient : MarshalByRefObject
+        {
+            delegate string RemoteAsyncDelegate();
+
+            [OneWay]
+            public string OurRemoteAsyncCallBack(IAsyncResult ar)
+            {
+                RemoteAsyncDelegate del = (RemoteAsyncDelegate)((AsyncResult)ar).AsyncDelegate;
+                return del.EndInvoke(ar);
+            }
+
+            public async Task Run()
+            {
+                RemoteService remoteService = new RemoteService();
+
+                RemoteAsyncDelegate remoteCall = remoteService.TimeConsumingRemoteCall;
+
+                var result = await Task.Factory.FromAsync(remoteCall.BeginInvoke, OurRemoteAsyncCallBack, null);
+                result.Output();
             }
         }
     }
