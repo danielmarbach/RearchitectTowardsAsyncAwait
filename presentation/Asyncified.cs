@@ -115,19 +115,40 @@ namespace RearchitectTowardsAsyncAwait
             MyAsyncEvent += MyAsyncEventHandler2;
             MyAsyncEvent += MyAsyncEventHandler;
 
+            "Observing one exception".Output();
+
             try
             {
                 await OnMyAsyncEvent();
             }
             catch (InvalidOperationException ex)
             {
-                Console.WriteLine($"Caught: { ex.Message } ");
+                Console.WriteLine($"Caught: {ex.Message} ");
             }
-            catch(ArgumentException ex)
+            catch (ArgumentException ex)
             {
-                Console.WriteLine($"Caught: { ex.Message } ");
+                Console.WriteLine($"Caught: {ex.Message} ");
+            }
+
+            "Observing all exceptions".Output();
+
+            Task allTasks = null;
+            try
+            {
+                allTasks = OnMyAsyncEvent();
+                await allTasks;
+            }
+            catch
+            {
+                AggregateException allExceptions = allTasks.Exception;
+                allExceptions.Handle(e =>
+                {
+                    Console.WriteLine(e.Message);
+                    return true;
+                });
             }
         }
+
 
         event AsyncEventHandler MyAsyncEvent;
 
@@ -196,6 +217,28 @@ namespace RearchitectTowardsAsyncAwait
         {
             MyEvent(this, EventArgs.Empty);
         }
+
+        [Test]
+        public async Task ManualResetEventUsage_OneTime()
+        {
+            var tcs = new TaskCompletionSource<object>();
+
+            var t1 = ((Func<Task>)(async () =>
+            {
+                "Entering wait".Output();
+                await tcs.Task;
+                "Continue".Output();
+            }))();
+
+            var t2 = ((Func<Task>)(async () =>
+            {
+                await Task.Delay(2000);
+                tcs.TrySetResult(null);
+            }))();
+
+            await Task.WhenAll(t1, t2);
+        }
+
 
         [Test]
         public async Task AsyncManualResetEventUsage()
