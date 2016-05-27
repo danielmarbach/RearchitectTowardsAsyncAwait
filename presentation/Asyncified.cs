@@ -266,7 +266,7 @@ namespace RearchitectTowardsAsyncAwait
                     var tcs = this.tcs;
                     if (!tcs.Task.IsCompleted ||
 #pragma warning disable 420
-                    Interlocked.CompareExchange(ref this.tcs, new TaskCompletionSource<bool>(), tcs) == tcs)
+                    Interlocked.CompareExchange(ref this.tcs, new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously), tcs) == tcs)
 #pragma warning restore 420
                         return;
 
