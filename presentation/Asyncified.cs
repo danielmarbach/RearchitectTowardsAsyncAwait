@@ -65,50 +65,6 @@ namespace RearchitectTowardsAsyncAwait
             sharedRessource.ToString().Output();
         }
 
-        /// <summary>
-        /// Inspired by http://blogs.msdn.com/b/pfxteam/archive/2012/02/12/10266988.aspx
-        /// </summary>
-        class AsyncLock
-        {
-            private readonly SemaphoreSlim semaphore = new SemaphoreSlim(1);
-            private readonly Task<Releaser> cachedReleaser;
-
-            public AsyncLock()
-            {
-                cachedReleaser = Task.FromResult(new Releaser(this));
-            }
-
-            public Task<Releaser> LockAsync()
-            {
-                return LockAsync(CancellationToken.None);
-            }
-
-            public Task<Releaser> LockAsync(CancellationToken cancellationToken)
-            {
-                var wait = semaphore.WaitAsync(cancellationToken);
-                return wait.IsCompleted ?
-                    cachedReleaser :
-                    wait.ContinueWith((_, state) => new Releaser((AsyncLock)state),
-                        this, CancellationToken.None,
-                        TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
-            }
-
-            public struct Releaser : IDisposable
-            {
-                private readonly AsyncLock asyncLock;
-
-                public Releaser(AsyncLock asyncLock)
-                {
-                    this.asyncLock = asyncLock;
-                }
-
-                public void Dispose()
-                {
-                    asyncLock?.semaphore.Release();
-                }
-            }
-        }
-
         [Test]
         public async Task AsyncEvent()
         {
@@ -259,63 +215,6 @@ namespace RearchitectTowardsAsyncAwait
             }))();
 
             await Task.WhenAll(t1, t2);
-        }
-
-        /// <summary>
-        /// Inspired by http://blogs.msdn.com/b/pfxteam/archive/2012/02/11/10266920.aspx
-        /// </summary>
-        class AsyncManualResetEvent
-        {
-            private volatile TaskCompletionSource<bool> tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-
-            public AsyncManualResetEvent(bool set)
-            {
-                if (set)
-                {
-                    tcs.SetResult(true);
-                }
-            }
-
-            public bool IsSet => tcs.Task.IsCompleted;
-
-            public Task WaitAsync()
-            {
-                return WaitAsync(CancellationToken.None);
-            }
-
-            public async Task WaitAsync(CancellationToken cancellationToken)
-            {
-                if (cancellationToken.IsCancellationRequested)
-                {
-                    return;
-                }
-                using (cancellationToken.Register(() => tcs.TrySetCanceled()))
-                {
-                    await tcs.Task.ConfigureAwait(false);
-                }
-            }
-
-            public void Set()
-            {
-                tcs.TrySetResult(true);
-            }
-
-            public void Reset()
-            {
-                var sw = new SpinWait();
-
-                do
-                {
-                    var tcs = this.tcs;
-                    if (!tcs.Task.IsCompleted ||
-#pragma warning disable 420
-                    Interlocked.CompareExchange(ref this.tcs, new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously), tcs) == tcs)
-#pragma warning restore 420
-                        return;
-
-                    sw.SpinOnce();
-                } while (true);
-            }
         }
 
         [Test]
