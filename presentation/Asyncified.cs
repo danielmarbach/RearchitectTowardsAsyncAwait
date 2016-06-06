@@ -375,22 +375,20 @@ namespace RearchitectTowardsAsyncAwait
 
         public class AsyncClient : MarshalByRefObject
         {
-            delegate string RemoteAsyncDelegate();
-
             [OneWay]
-            public string OurRemoteAsyncCallBack(IAsyncResult ar)
+            public string Callback(IAsyncResult ar)
             {
-                RemoteAsyncDelegate del = (RemoteAsyncDelegate)((AsyncResult)ar).AsyncDelegate;
+                var del = (Func<string>)((AsyncResult)ar).AsyncDelegate;
                 return del.EndInvoke(ar);
             }
 
             public async Task Run()
             {
-                RemoteService remoteService = new RemoteService();
+                var remoteService = new RemoteService();
 
-                RemoteAsyncDelegate remoteCall = remoteService.TimeConsumingRemoteCall;
+                Func<string> remoteCall = remoteService.TimeConsumingRemoteCall;
 
-                var result = await Task.Factory.FromAsync(remoteCall.BeginInvoke, OurRemoteAsyncCallBack, null);
+                var result = await Task.Factory.FromAsync(remoteCall.BeginInvoke, Callback, null);
                 result.Output();
             }
         }

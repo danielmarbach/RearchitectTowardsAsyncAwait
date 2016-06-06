@@ -164,8 +164,6 @@ namespace RearchitectTowardsAsyncAwait
 
         public class SyncClient : MarshalByRefObject
         {
-            delegate string RemoteSyncDelegate();
-
             public void Run()
             {
                 var remoteService = new RemoteService();
