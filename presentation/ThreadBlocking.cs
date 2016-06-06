@@ -168,11 +168,9 @@ namespace RearchitectTowardsAsyncAwait
 
             public void Run()
             {
-                RemoteService remoteService = new RemoteService();
+                var remoteService = new RemoteService();
 
-                RemoteSyncDelegate remoteCall = remoteService.TimeConsumingRemoteCall;
-
-                remoteCall().Output();
+                remoteService.TimeConsumingRemoteCall().Output();
             }
         }
     }
