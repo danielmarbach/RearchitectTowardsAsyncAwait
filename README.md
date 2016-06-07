@@ -26,6 +26,8 @@ The font used in the slides is
 * [ConfigureAwait Rosly Analyzer](https://github.com/Particular/Particular.CodeRules/tree/master/src/Particular.CodeRules/ConfigureAwait)
 * [Async Fixer extension](https://visualstudiogallery.msdn.microsoft.com/03448836-db42-46b3-a5c7-5fc5d36a8308)
 * [Sync vs. Async, IO bound and CPU bound discussion on ayende.com](https://ayende.com/blog/173473/fun-async-tricks-for-getting-better-performance)
+* [Await statement inside lock](http://stackoverflow.com/questions/7612602/why-cant-i-use-the-await-operator-within-the-body-of-a-lock-statement)
+* [AsyncEx](TODO)
 
 ## Dart
 * [Asynchrony with Dart](https://www.dartlang.org/docs/dart-up-and-running/ch02.html#asynchrony)
@@ -43,3 +45,8 @@ The font used in the slides is
 ## Python
 * [Asynchronous I/O, event loop, coroutines and tasks](https://docs.python.org/3/library/asyncio.html)
 * [Tasks and coroutines](https://docs.python.org/3/library/asyncio-task.html)
+
+## Particular
+* [End to End Performance tests](https://github.com/Particular/EndToEnd/tree/master/src/PerformanceTests)
+* [Highlevel Spike RabbitMQ Client](https://github.com/rabbitmq/rabbitmq-dotnet-client/pull/151)
+* [Lowlevel Spike RabbitMQ Client](https://github.com/rabbitmq/rabbitmq-dotnet-client/pull/149)
