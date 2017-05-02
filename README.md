@@ -28,6 +28,8 @@ The font used in the slides is
 * [Sync vs. Async, IO bound and CPU bound discussion on ayende.com](https://ayende.com/blog/173473/fun-async-tricks-for-getting-better-performance)
 * [Await statement inside lock](http://stackoverflow.com/questions/7612602/why-cant-i-use-the-await-operator-within-the-body-of-a-lock-statement)
 * [AsyncEx](TODO)
+* [CLR 4.0 Threadpool improvements](https://blogs.msdn.microsoft.com/ericeil/2009/04/23/clr-4-0-threadpool-improvements-part-1/)
+* [Overview of the Threadpool](https://msdn.microsoft.com/en-us/magazine/ff960958.aspx)
 
 ## Dart
 * [Asynchrony with Dart](https://www.dartlang.org/docs/dart-up-and-running/ch02.html#asynchrony)
